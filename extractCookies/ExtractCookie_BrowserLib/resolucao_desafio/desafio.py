@@ -4,6 +4,8 @@ import browsercookie
 import termcolor
 import os
 
+#Esse código é a resposta do desafio caso precisem verificar
+
 def get_chrome_datetime(chromedate):
     if chromedate != 86400000000 and chromedate:
         try:
