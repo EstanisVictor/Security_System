@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap"
+      rel="stylesheet"
+    />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Fibonacci Calculator</title>
+  </head>
+  <body>
+    <style>
+      :root {
+        --background-color: #282a36;
+        --shape-color: #30323d;
+        --current-line-color: #44475a;
+        --foreground-color: #f8f8f2;
+        --comment-color: #6272a4;
+        --cyan-color: #8be9fd;
+        --green-color: #50fa7b;
+        --orange-color: #ffb86c;
+        --pink-color: #ff79c6;
+        --purple-color: #bd93f9;
+        --red-color: #ff5555;
+        --yellow-color: #f1fa8c;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Ubuntu", sans-serif;
+        font-size: 1rem;
+        color: var(--foreground-color);
+        background-color: var(--background-color);
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      .heading {
+        color: var(--green-color);
+        text-align: center;
+        font-size: 2.5rem;
+      }
+
+      #root {
+        display: grid;
+        place-items: center;
+        height: 100vh;
+        padding: 2rem;
+      }
+
+      .card {
+        width: 100%;
+        max-width: 500px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        border-radius: 0.5rem;
+      }
+
+      .result {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .number {
+        font-size: 1.2rem;
+        color: var(--current-line-color);
+      }
+
+      .loading {
+        text-align: center;
+        margin-top: 1rem;
+      }
+
+      .flex-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .input {
+        width: 100%;
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        border: 1px solid var(--current-line-color);
+        background-color: var(--shape-color);
+        color: var(--foreground-color);
+        font-size: 1rem;
+      }
+
+      .input::-webkit-outer-spin-button,
+      .input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+
+      .button {
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        border: 1px solid var(--current-line-color);
+        background-color: var(--purple-color);
+        color: var(--foreground-color);
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+      }
+
+      .button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .button:not(:disabled):hover {
+        background-color: var(--pink-color);
+      }
+
+      .loading::after {
+        content: "";
+        display: inline-block;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 99999px;
+        border-top: 3px solid transparent;
+        border-top-color: var(--green-color);
+        animation: spin 0.6s linear infinite;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+
+    <div id="root">
+      <article class="card">
+        <h1 class="heading">Fibonacci calculator</h1>
+
+        <form>
+          <div class="flex-wrapper">
+            <label>
+              <input
+                type="number"
+                name="number"
+                id="number"
+                class="input"
+                min="0"
+                placeholder="Enter a number"
+              />
+            </label>
+            <button type="submit" data-js="button" class="button">
+              Submit
+            </button>
+          </div>
+        </form>
+
+        <div class="result">
+          <div class="flex-wrapper">
+            <span data-js="number" class="number"></span>
+          </div>
+
+          <strong data-js="fib" class="heading"></strong>
+          <div class="loading hidden" data-js="loading"></div>
+
+          <div class="flex-wrapper">
+            <span data-js="server-time" class="number"></span>
+            <span data-js="client-time" class="number"></span>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <script>
+      const form = document.querySelector("form");
+      const numberEl = document.querySelector('[data-js="number"]');
+      const serverTimeEl = document.querySelector('[data-js="server-time"]');
+      const clientTimeEl = document.querySelector('[data-js="client-time"]');
+      const fibEl = document.querySelector('[data-js="fib"]');
+      const loadingEl = document.querySelector('[data-js="loading"]');
+      const buttonEl = document.querySelector('[data-js="button"]');
+
+      const toggleLoadingIndicator = () => {
+        loadingEl.classList.toggle("hidden");
+        fibEl.classList.toggle("hidden");
+        buttonEl.disabled = !buttonEl.disabled;
+      };
+
+      const getFibonacci = async (number) => {
+        toggleLoadingIndicator();
+
+        try {
+          const response = await fetch(`http://localhost:8000/fib/${number}`);
+          const data = await response.json();
+          toggleLoadingIndicator();
+          return data;
+        } catch (error) {
+          console.error("An error occurred:", error);
+          return;
+        }
+      };
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const start = performance.now();
+        const num = Number(form.number.value);
+
+        if (isNaN(num)) {
+          return;
+        }
+
+        const { number, fib, time } = await getFibonacci(num);
+        const elapsed = performance.now() - start;
+
+        if (number && fib && time) {
+          numberEl.innerText = number;
+          fibEl.innerText = fib;
+          serverTimeEl.innerText = `server: ${time.toFixed(3)}ms`;
+          clientTimeEl.innerText = `client: ${elapsed.toFixed(3)}ms`;
+
+          form.reset();
+        }
+      });
+    </script>
+  </body>
+</html>
