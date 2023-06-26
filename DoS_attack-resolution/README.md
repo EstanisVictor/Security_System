@@ -1,4 +1,7 @@
-# DoS_attack
+# DoS_attack Resolution
+
+Desafio do Isaac Santiago
+Defesa contra ataque de DOS bloqueando o IP
 
 ## About
 
